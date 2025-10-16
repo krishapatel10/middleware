@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from .db import get_db
 from .schemas import ReviewCreate, ReviewResponse, FinalizeReview
-from .llm_mock import evaluate_review
 from dotenv import load_dotenv
 import os
 
@@ -40,7 +39,7 @@ def verify_api_key(x_api_key: str = Header(None)):
 
 @app.post("/v1/reviews", response_model=ReviewResponse)
 def create_review(review: ReviewCreate, database: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
-    # Insert initial row (received)
+    # Insert only; evaluation happens later
     result = database.execute(
         text("""
             INSERT INTO reviews_table (response_id_of_expertiza, review, status)
@@ -50,35 +49,16 @@ def create_review(review: ReviewCreate, database: Session = Depends(get_db), api
         {"response_id_of_expertiza": review.response_id_of_expertiza, "review": review.review},
     )
     row = result.mappings().one()
-
-    # Mock LLM
-    feedback, score, reasoning = evaluate_review(review.review)
-
-    # Update with LLM-generated fields
-    result = database.execute(
-        text("""
-            UPDATE reviews_table
-               SET llm_generated_feedback = :feedback,
-                   llm_generated_score    = :score,
-                   llm_details_reasoning  = :reasoning,
-                   status                 = 'evaluated',
-                   updated_at             = now()
-             WHERE id = :id
-         RETURNING *;
-        """),
-        {"feedback": feedback, "score": score, "reasoning": reasoning, "id": row["id"]},
-    )
-    updated = result.mappings().one()
     database.commit()
 
     return {
-        "id": updated["id"],
-        "llm_generated_feedback": updated["llm_generated_feedback"],
-        "llm_generated_score": updated["llm_generated_score"],
-        "llm_details_reasoning": updated["llm_details_reasoning"],
-        "finalized_feedback": updated["finalized_feedback"],
-        "finalized_score": updated["finalized_score"],
-        "status": updated["status"],
+        "id": row["id"],
+        "llm_generated_feedback": row["llm_generated_feedback"],
+        "llm_generated_score": row["llm_generated_score"],
+        "llm_details_reasoning": row["llm_details_reasoning"],
+        "finalized_feedback": row["finalized_feedback"],
+        "finalized_score": row["finalized_score"],
+        "status": row["status"],
     }
 
 @app.get("/v1/reviews/{id}", response_model=ReviewResponse)
