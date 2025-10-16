@@ -1,5 +1,7 @@
 # mcp/app.py
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Header, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from .db import get_db
@@ -8,8 +10,31 @@ from .llm_mock import evaluate_review
 
 app = FastAPI(title="MCP Server")
 
+# Allow requests only from Expertiza
+origins = [
+    "https://expertiza.ncsu.edu",  # production Expertiza
+    "http://localhost:3000"        # local dev (optional)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+API_KEY = "supersecret123"  # later replace with env var
+
+def verify_api_key(x_api_key: str = Header(None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API key"
+        )
+
+
 @app.post("/v1/reviews", response_model=ReviewResponse)
-def create_review(review: ReviewCreate, database: Session = Depends(get_db)):
+def create_review(review: ReviewCreate, database: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     # Insert initial row (received)
     result = database.execute(
         text("""
@@ -52,7 +77,7 @@ def create_review(review: ReviewCreate, database: Session = Depends(get_db)):
     }
 
 @app.get("/v1/reviews/{id}", response_model=ReviewResponse)
-def get_review(id: int, database: Session = Depends(get_db)):
+def get_review(id: int, database: Session = Depends(get_db),api_key: str = Depends(verify_api_key)):
     result = database.execute(text("SELECT * FROM reviews_table WHERE id = :id"), {"id": id})
     row = result.mappings().first()
     if not row:
@@ -68,7 +93,7 @@ def get_review(id: int, database: Session = Depends(get_db)):
     }
 
 @app.post("/v1/reviews/{id}/accept", response_model=ReviewResponse)
-def finalize_review(id: int, data: FinalizeReview, database: Session = Depends(get_db)):
+def finalize_review(id: int, data: FinalizeReview, database: Session = Depends(get_db),api_key: str = Depends(verify_api_key)):
     current = database.execute(text("SELECT * FROM reviews_table WHERE id = :id"), {"id": id}).mappings().first()
     if not current:
         raise HTTPException(status_code=404, detail="Review not found")
