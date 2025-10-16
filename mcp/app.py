@@ -7,6 +7,11 @@ from sqlalchemy import text
 from .db import get_db
 from .schemas import ReviewCreate, ReviewResponse, FinalizeReview
 from .llm_mock import evaluate_review
+from dotenv import load_dotenv
+import os
+
+# Load the environment variables before using API_KEY
+load_dotenv()
 
 app = FastAPI(title="MCP Server")
 
