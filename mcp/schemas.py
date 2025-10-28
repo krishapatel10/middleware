@@ -1,6 +1,6 @@
 # mcp/schemas.py
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Union, Any
+from typing import Optional, Union, Any
 
 # Accept ints, floats, strings, or None for scores
 RubricKey = Optional[Union[int, float, str]]
@@ -48,6 +48,7 @@ class RubricEvaluation(BaseModel):
     score: RubricKey
     justification: Optional[str] = None
 
+    # Normalize common LLM tokens -> None or numeric
     @validator("score", pre=True)
     def _normalize_score(cls, v: Any):
         if v is None:
@@ -61,11 +62,14 @@ class RubricEvaluation(BaseModel):
                     return float(txt)
                 return int(txt)
             except Exception:
-                return txt
+                return txt  # leave as string if not numeric
         if isinstance(v, (int, float)):
             return v
         return v
 
+# ------------------------------
+# Evaluation structure (rubric-based)
+# ------------------------------
 class Evaluation(BaseModel):
     Praise: RubricEvaluation
     Problems_and_Solutions: RubricEvaluation = Field(..., alias="Problems & Solutions")
@@ -111,7 +115,5 @@ class ReviewResponse(BaseModel):
     status: str
 
     class Config:
-        from_attributes = True  # for Pydantic v2 compatibility
+        from_attributes = True  # For Pydantic v2 compatibility
         allow_population_by_field_name = True
-
-
