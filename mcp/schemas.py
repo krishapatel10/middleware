@@ -1,27 +1,18 @@
-# mcp/schemas.py
+# app/schemas.py
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Union, Any
+from typing import Optional, Dict, Union, Any
 
 # Accept ints, floats, strings, or None for scores
 RubricKey = Optional[Union[int, float, str]]
 
-# ------------------------------
-# Request model: when Expertiza sends a new review
-# ------------------------------
 class ReviewCreate(BaseModel):
     response_id_of_expertiza: int
     review: str
 
-# ------------------------------
-# Model for accepting instructor’s edits
-# ------------------------------
 class FinalizeReview(BaseModel):
-    finalized_feedback: Optional[str] = None
-    finalized_score: Optional[float] = None
+    finalized_feedback: Optional[str]
+    finalized_score: Optional[float]
 
-# ------------------------------
-# Detailed reasoning structure (from LLM)
-# ------------------------------
 class Reasoning(BaseModel):
     Praise: Optional[str] = None
     Problems_and_Solutions: Optional[str] = Field(None, alias="Problems & Solutions")
@@ -38,17 +29,15 @@ class Reasoning(BaseModel):
     Comprehensiveness: Optional[str] = None
 
     class Config:
+        
         allow_population_by_field_name = True
         anystr_strip_whitespace = True
 
-# ------------------------------
-# Evaluation rubric structure
-# ------------------------------
 class RubricEvaluation(BaseModel):
     score: RubricKey
     justification: Optional[str] = None
 
-    # Normalize common LLM tokens -> None or numeric
+    # normalize common LLM tokens -> None or numeric
     @validator("score", pre=True)
     def _normalize_score(cls, v: Any):
         if v is None:
@@ -57,6 +46,7 @@ class RubricEvaluation(BaseModel):
             txt = v.strip()
             if txt.upper() in ("N/A", "NA", ""):
                 return None
+            # try to coerce numeric string to int/float
             try:
                 if "." in txt:
                     return float(txt)
@@ -67,9 +57,6 @@ class RubricEvaluation(BaseModel):
             return v
         return v
 
-# ------------------------------
-# Evaluation structure (rubric-based)
-# ------------------------------
 class Evaluation(BaseModel):
     Praise: RubricEvaluation
     Problems_and_Solutions: RubricEvaluation = Field(..., alias="Problems & Solutions")
@@ -89,9 +76,6 @@ class Evaluation(BaseModel):
         allow_population_by_field_name = True
         anystr_strip_whitespace = True
 
-# ------------------------------
-# Combined LLM output model
-# ------------------------------
 class ReviewLLMOutput(BaseModel):
     reasoning: Reasoning
     evaluation: Evaluation
@@ -101,9 +85,6 @@ class ReviewLLMOutput(BaseModel):
         allow_population_by_field_name = True
         anystr_strip_whitespace = True
 
-# ------------------------------
-# Response model: returned from DB
-# ------------------------------
 class ReviewResponse(BaseModel):
     id: int
     llm_generated_feedback: Optional[str] = None
@@ -115,5 +96,5 @@ class ReviewResponse(BaseModel):
     status: str
 
     class Config:
-        from_attributes = True  # For Pydantic v2 compatibility
+        orm_mode = True
         allow_population_by_field_name = True

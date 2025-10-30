@@ -27,7 +27,7 @@ async def main():
         )
 
         print(" Calling evaluate_and_parse (this will use temperature=0 and retries)...")
-        validated = await service.evaluate_and_parse(sample_review, temperature=0.0)
+        validated = await service.evaluate_multiple_times(sample_review, temperature=0.0)
 
         out = validated.dict(by_alias=True)
         print("\n Validated ReviewLLMOutput (pretty):")

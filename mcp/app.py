@@ -7,6 +7,7 @@ from .db import get_db
 from .schemas import ReviewCreate, ReviewResponse, FinalizeReview
 from dotenv import load_dotenv
 import os
+from routes.review_routes import get_llm_service
 
 # Import dummy data utilities
 from .dummy_data import generate_dummy_review, validate_review_structure
@@ -175,3 +176,9 @@ def test_dummy(database: Session = Depends(get_db)):
 
     row = database.execute(text("SELECT * FROM reviews_table ORDER BY id DESC LIMIT 1")).mappings().one()
     return {"message": "Inserted dummy review successfully", "data": row}
+
+
+@app.on_event("shutdown")
+async def close_llm_service():
+    svc = get_llm_service()
+    await svc.close()
