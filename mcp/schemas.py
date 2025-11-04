@@ -8,6 +8,13 @@ RubricKey = Optional[Union[int, float, str]]
 class ReviewCreate(BaseModel):
     response_id_of_expertiza: int
     review: str
+    @validator("review")
+    def review_must_be_valid(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Review cannot be empty or whitespace")
+        if len(v.strip()) < 10:  # you can change threshold
+            raise ValueError("Review is too short to be meaningful (min 10 chars)")
+        return v
 
 class FinalizeReview(BaseModel):
     finalized_feedback: Optional[str]
