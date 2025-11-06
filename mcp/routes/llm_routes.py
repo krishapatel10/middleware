@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 import logging
-from mcp.services.llm_service import LLMService  # your async service using LLMClient
+from mcp.services.llm_service import LLMService 
 from mcp.schemas import ReviewRequest
 logger = logging.getLogger(__name__)
 router = APIRouter()
