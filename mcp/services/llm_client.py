@@ -45,7 +45,7 @@ class LLMClient:
         def _sync_call():
             try:
                 model = genai.GenerativeModel(model_name)
-                # FIXED: temperature is passed inside generation_config
+              
                 resp = model.generate_content(
                     prompt,
                     generation_config={"temperature": temperature}
@@ -64,5 +64,5 @@ class LLMClient:
             return await self.call_gemini(prompt, temperature=temperature)
         except Exception as e:
             logger.error("LLM call (Gemini) failed: %s", e)
-            # Optionally, implement fallback to another provider here.
+           
             raise
