@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-
 _llm_service_instance: Optional[LLMService] = None
 
 def get_llm_service() -> LLMService:

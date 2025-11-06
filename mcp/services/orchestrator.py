@@ -1,84 +1,132 @@
-# services/orchestrator.py
-import asyncio
-import httpx
+# mcp/services/orchestrator.py
+import json
 import logging
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
-from typing import Optional, Callable
-from db.session import SessionLocal
-from mcp.services.llm_service import LLMService   
+import traceback
+from typing import Optional, Any, Dict
+from pydantic import BaseModel
+
+from sqlalchemy import text
+from mcp.db.session import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 
-async def generate_llm_review(review_text: str, temperature: float = 0.0, max_attempts: int = 10):
+# You already have this helper; keep it as the LLM entrypoint
+async def generate_llm_review(review_text: str, temperature: float = 0.0, max_attempts: int = 10) -> Any:
+    """
+    Dynamically import LLMService at call time to avoid circular imports.
+    Returns whatever evaluate_and_parse returns (pydantic model or dict).
+    """
+    # local import avoids circular import at module import time
+    from mcp.services.llm_service import LLMService
+
     llm = LLMService()
     result = await llm.evaluate_and_parse(review_text=review_text, temperature=temperature, max_attempts=max_attempts)
     return result
 
 
-async def process_review_and_update(
-    review_id: int,
-    review_text: str,
-    temperature: float = 0.0,
-    max_attempts: Optional[int] = None,
-    db_session_factory: Callable[[], Session] = SessionLocal,
-):
+async def process_review_and_update(review_id: int, review_text: str):
     """
-    Background orchestration task:
-    - Calls the LLM service
-    - Waits for LLM output
-    - Updates the review row in DB with generated feedback, score, reasoning
+    Worker coroutine: calls LLM via generate_llm_review, normalizes output,
+    and writes only llm_generated_feedback, llm_generated_score, llm_details_reasoning, status.
+    (No writes to llm_generated_output.)
     """
-
-    db = db_session_factory()
     try:
-        logger.info(f"Starting LLM processing for review id={review_id}")
+        llm_out = await generate_llm_review(review_text)  # returns pydantic model or dict
+    except Exception as exc:
+        traceback.print_exc()
+        try:
+            async with AsyncSessionLocal() as db:
+                await db.execute(
+                    text(
+                        """
+                        UPDATE reviews_table
+                           SET status = :status,
+                               llm_details_reasoning = :err,
+                               updated_at = CURRENT_TIMESTAMP
+                         WHERE id = :id
+                        """
+                    ),
+                    {"status": "failed", "err": str(exc), "id": review_id},
+                )
+                await db.commit()
+        except Exception:
+            traceback.print_exc()
+        return
 
-        async with httpx.AsyncClient() as client:
-            response = await generate_llm_review(
-                review_text=review_text,
-                temperature=temperature,
-                max_attempts=max_attempts or 10)
-        if response.status_code != 200:
-            logger.error(f"LLM API failed for id={review_id}: {response.status_code} - {response.text}")
-            raise Exception(f"LLM API call failed with {response.status_code}")
+    # Normalize to plain dict
+    if isinstance(llm_out, BaseModel):
+        try:
+            llm_dict = llm_out.model_dump()
+        except Exception:
+            llm_dict = llm_out.dict()
+    elif isinstance(llm_out, dict):
+        llm_dict = llm_out
+    else:
+        llm_dict = {"feedback": str(llm_out)}
 
-        data = response.json()
+    # Extract fields
+    feedback = llm_dict.get("feedback")
+    score = llm_dict.get("score")
 
-        # Update DB with LLM results
-        db.execute(
-            text("""
-                UPDATE reviews_table
-                   SET llm_generated_feedback = :feedback,
-                       llm_generated_score = :score,
-                       llm_details_reasoning = :reasoning,
-                       status = 'processed',
-                       updated_at = CURRENT_TIMESTAMP
-                 WHERE id = :id
-            """),
-            {
-                "feedback": data.get("llm_generated_feedback") or data.get("feedback") or "",
-                "score": data.get("llm_generated_score") or data.get("score"),
-                "reasoning": data.get("llm_details_reasoning") or data.get("reasoning") or "",
-                "id": review_id,
-            },
-        )
-        db.commit()
-        logger.info(f"Review {review_id} processed successfully and updated in DB.")
+    # Extract reasoning/details and JSON-serialize for storage text column
+    details_obj = llm_dict.get("reasoning") or llm_dict.get("reasoning_summary") or None
+    try:
+        details_json = json.dumps(details_obj) if details_obj is not None else None
+    except (TypeError, ValueError):
+        details_json = json.dumps(str(details_obj))
 
-    except Exception as e:
-        logger.exception(f"Failed to process review id={review_id}: {e}")
-        # Mark as failed for debugging / retries
-        db.execute(
-            text("""
-                UPDATE reviews_table
-                   SET status = 'failed',
-                       updated_at = CURRENT_TIMESTAMP
-                 WHERE id = :id
-            """),
-            {"id": review_id},
-        )
-        db.commit()
+    update_sql = text(
+        """
+        UPDATE reviews_table
+           SET llm_generated_feedback = :feedback,
+               llm_generated_score = :score,
+               llm_details_reasoning = :details,
+               status = :status,
+               updated_at = CURRENT_TIMESTAMP
+         WHERE id = :id
+        """
+    )
 
-    finally:
-        db.close()
+    async with AsyncSessionLocal() as db:
+        try:
+            await db.execute(
+                update_sql,
+                {
+                    "feedback": feedback,
+                    "score": score,
+                    "details": details_json,
+                    "status": "processed",
+                    "id": review_id,
+                },
+            )
+            await db.commit()
+            print(f"Processed review id={review_id}")
+            return
+        except Exception as exc:
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            traceback.print_exc()
+            try:
+                await db.execute(
+                    text(
+                        """
+                        UPDATE reviews_table
+                           SET status = :status,
+                               llm_details_reasoning = :err,
+                               updated_at = CURRENT_TIMESTAMP
+                         WHERE id = :id
+                        """
+                    ),
+                    {"status": "failed", "err": str(exc), "id": review_id},
+                )
+                await db.commit()
+                print(f"Marked review {review_id} as failed")
+            except Exception:
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
+                traceback.print_exc()
+                print(f"Failed to mark review {review_id} as failed (see stack traces above)")

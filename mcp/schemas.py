@@ -1,20 +1,11 @@
 # app/schemas.py
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Union, Any
+from pydantic import BaseModel, Field, conint
+from typing import Optional, Union, List
 
 # Accept ints, floats, strings, or None for scores
 RubricKey = Optional[Union[int, float, str]]
 
-class ReviewCreate(BaseModel):
-    response_id_of_expertiza: int
-    review: str
-    @validator("review")
-    def review_must_be_valid(cls, v):
-        if not v or not v.strip():
-            raise ValueError("Review cannot be empty or whitespace")
-        if len(v.strip()) < 10:  # you can change threshold
-            raise ValueError("Review is too short to be meaningful (min 10 chars)")
-        return v
+
 
 class FinalizeReview(BaseModel):
     finalized_feedback: Optional[str]
@@ -36,7 +27,7 @@ class Reasoning(BaseModel):
     Comprehensiveness: Optional[str] = None
 
     class Config:
-        
+
         allow_population_by_field_name = True
         anystr_strip_whitespace = True
 
@@ -44,25 +35,6 @@ class RubricEvaluation(BaseModel):
     score: RubricKey
     justification: Optional[str] = None
 
-    # normalize common LLM tokens -> None or numeric
-    @validator("score", pre=True)
-    def _normalize_score(cls, v: Any):
-        if v is None:
-            return None
-        if isinstance(v, str):
-            txt = v.strip()
-            if txt.upper() in ("N/A", "NA", ""):
-                return None
-            # try to coerce numeric string to int/float
-            try:
-                if "." in txt:
-                    return float(txt)
-                return int(txt)
-            except Exception:
-                return txt  # leave as string if not numeric
-        if isinstance(v, (int, float)):
-            return v
-        return v
 
 class Evaluation(BaseModel):
     Praise: RubricEvaluation
@@ -105,3 +77,8 @@ class ReviewResponse(BaseModel):
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
+
+class ReviewRequest(BaseModel):
+    review_text: str = Field(..., description="Raw review text to evaluate")
+    temperature: Optional[float] = Field(0.0, description="LLM temperature")
+    max_attempts: Optional[int] = Field(None, description="Override max attempts (optional)")

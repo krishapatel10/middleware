@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 # Load .env file into environment variables
 load_dotenv()
 
-
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
 

@@ -1,21 +1,18 @@
+# db/session.py
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/reviews_db")
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Async engine & session
+engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# SINGLE shared Base used by all models
+Base = declarative_base()
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-
+async def create_tables():
+    """Create DB tables (useful for local/dev: python -m create_db)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
