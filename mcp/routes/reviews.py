@@ -1,7 +1,6 @@
 # app/routes/reviews.py
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from mcp.schemas import ReviewPayload, ReviewResponse, FinalizeReview
 from mcp.db.session import AsyncSessionLocal
 from mcp.db.crud import insert_review_received, get_review_by_id, finalize_review_by_id
@@ -11,15 +10,10 @@ from mcp.services.utils import build_review_text
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
-# DB dependency (kept trivial)
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         yield session
 
-
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
-        yield session
 
 @router.post("", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 async def create_review(
