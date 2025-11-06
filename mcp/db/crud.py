@@ -22,7 +22,7 @@ async def insert_review_received(
     database: AsyncSession,
     response_id_of_expertiza: ResponseId,
     review_text: str,
-    status: str = "pending",   # <<-- changed from "received" to "pending"
+    status: str = "pending",  
     idempotent: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """
@@ -51,8 +51,6 @@ async def insert_review_received(
         row = result.mappings().first()
         return dict(row) if row else None
     except DBAPIError as exc:
-        # You can customize logging here; re-raise or return None
-        # For debugging: raise a clearer exception or log exc.orig
         raise
 
 
@@ -104,17 +102,3 @@ async def finalize_review_by_id(
     return dict(updated) if updated else None
 
 
-# --- Optional: atomic upsert version (use after adding UNIQUE constraint on response_id_of_expertiza)
-# async def insert_review_received_upsert(...):
-#     upsert_sql = text(
-#         """
-#         INSERT INTO reviews_table (response_id_of_expertiza, review, status, created_at, updated_at)
-#         VALUES (:response_id_of_expertiza, :review, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-#         ON CONFLICT (response_id_of_expertiza)
-#         DO UPDATE SET updated_at = EXCLUDED.updated_at
-#         RETURNING *
-#         """
-#     )
-#     result = await database.execute(upsert_sql, {...})
-#     await database.commit()
-#     return dict(result.mappings().first()) if result else None
