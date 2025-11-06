@@ -10,13 +10,11 @@ from mcp.db.session import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 
-# You already have this helper; keep it as the LLM entrypoint
 async def generate_llm_review(review_text: str, temperature: float = 0.0, max_attempts: int = 10) -> Any:
     """
     Dynamically import LLMService at call time to avoid circular imports.
     Returns whatever evaluate_and_parse returns (pydantic model or dict).
     """
-    # local import avoids circular import at module import time
     from mcp.services.llm_service import LLMService
 
     llm = LLMService()
@@ -31,7 +29,7 @@ async def process_review_and_update(review_id: int, review_text: str):
     (No writes to llm_generated_output.)
     """
     try:
-        llm_out = await generate_llm_review(review_text)  # returns pydantic model or dict
+        llm_out = await generate_llm_review(review_text)  
     except Exception as exc:
         traceback.print_exc()
         try:
