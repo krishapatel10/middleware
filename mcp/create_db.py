@@ -3,9 +3,9 @@ import asyncio
 import logging
 
 # Import models so their class definitions run and register on Base.metadata
-import db.models
+from mcp.db import models  # noqa: F401
 
-from db.session import create_tables, Base
+from mcp.db.session import create_tables, Base
 
 async def main():
     logging.basicConfig(level=logging.INFO)
