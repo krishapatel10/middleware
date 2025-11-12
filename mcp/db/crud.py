@@ -58,7 +58,10 @@ async def get_review_by_id(database: AsyncSession, review_id: int) -> Optional[D
     """
     Fetch a review row by id. Returns a dict or None if not found.
     """
-    result = await database.execute(text("SELECT * FROM reviews_table WHERE id = :id"), {"id": review_id})
+    result = await database.execute(
+        text("SELECT * FROM reviews_table WHERE response_id_of_expertiza = :rid"),
+        {"rid": review_id},
+    )
     row = result.mappings().first()
     return dict(row) if row else None
 
