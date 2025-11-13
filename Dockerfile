@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project
 COPY . .
 
+#copy the .env.example to .env
+COPY .env.example .env
+
 EXPOSE 8000
 
 # Initialize DB tables then start the API
