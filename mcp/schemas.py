@@ -9,7 +9,7 @@ class ScoreItem(BaseModel):
     question: str = Field(..., description="Question identifier or label")
     type: str = Field(..., description="Type of the question, e.g., 'Criterion'")
     max_points: Union[int, float, str] = Field(..., description="Numeric or textual score answer")
-    awarded_points: Union[int, float, str] = Field(..., description="Points awarded for the question")
+    awarded_points: Union[int, float, str, None] = Field(..., description="Points awarded for the question") #it can be null to indicate no score given
     comments: Optional[str] = Field(None, description="Optional comment for the question")
 
 class ReviewPayload(BaseModel):
