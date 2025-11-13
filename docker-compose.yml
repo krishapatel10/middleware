@@ -25,14 +25,20 @@ services:
       db:
         condition: service_healthy
     environment:
-      # Async SQLAlchemy URL using asyncpg driver
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-reviews_db}}
+      # Override DATABASE_URL to use docker service name 'db' instead of localhost
+      # This must come before env_file to take precedence
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-reviews_db}
+      # JWT configuration
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your_secret_key}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      SECRET_KEY: ${SECRET_KEY:-your_secret_key}
+      ALGORITHM: ${ALGORITHM:-HS256}
       # LLM/other envs can be added here or via .env
-      # GEMINI_API_KEY: your_key_here
+      # GEMINI_API_KEY: ${GEMINI_API_KEY}
     ports:
       - "8000:8000"
+    env_file:
+      - .env
 
 volumes:
   pgdata:
-
-

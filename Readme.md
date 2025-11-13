@@ -20,35 +20,23 @@ Lightweight middleware built with **FastAPI** that connects a large language mod
 ```bash
 git clone https://github.ncsu.edu/upaul/mcp-server.git
 cd mcp-server
-pip install -r requirements.txt
 ```
 
 ### 2. Environment variables
 
-Create a `.env` file in project root:
-
-```env
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/reviews_db
-JWT_SECRET_KEY=your_secret_key
-JWT_ALGORITHM=HS256
+```bash
+cp .env.example .env
 ```
 
-### 3. Create the database (local dev)
+Edit `.env` and fill in the values.
 
-Run the provided script to create DB schema/tables:
+### 3. Run with Docker
 
 ```bash
-python create_db.py
+docker compose up --build
 ```
 
-
-### 4. Run the app
-
-```bash
-uvicorn mcp.app:app --reload
-```
-
----
+The server will start on port **8000**.
 
 ## API Endpoints
 

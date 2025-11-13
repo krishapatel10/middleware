@@ -10,7 +10,8 @@ app = FastAPI(title="HTTP Server for Review Processing")
 # CORS setup
 origins = [
     "https://expertiza.ncsu.edu",  # production
-    "http://localhost:3000"        # local dev
+    "http://localhost:3000",        # local dev
+    "http://152.7.178.226:8080/"  # staging server
 ]
 app.add_middleware(
     CORSMiddleware,

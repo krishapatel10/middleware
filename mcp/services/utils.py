@@ -17,31 +17,38 @@ async def schedule_process_review(review_id: int, review_text: str) -> None:
     loop.create_task(process_review_and_update(review_id, review_text))
 
 def build_review_text(payload: ReviewPayload) -> str:
-    parts = []
+    parts: list[str] = []
 
-    if payload.assignment:
-        parts.append(f"Assignment: {payload.assignment}")
+    # Course / assignment metadata
+    if payload.course_name:
+        parts.append(f"Course: {payload.course_name}")
 
-    parts.append(f"Response ID: {payload.response_id_of_expertiza}")
+    if payload.assignment_name:
+        parts.append(f"Assignment: {payload.assignment_name}")
 
-    if payload.overall_comments:
-        parts.append("Overall comments:")
-        parts.append(payload.overall_comments)
+    parts.append(f"Response ID (Expertiza): {payload.response_id_of_expertiza}")
+    parts.append(f"Round no: {payload.round}")
 
+    # Scores block
     if payload.scores:
         parts.append("Scores:")
         for i, s in enumerate(payload.scores, start=1):
-            # include question, numeric answer and optional comment
-            q = s.question or f"question_{i}"
-            parts.append(f" - {q}: {s.answer}")
-            if s.comment:
-                parts.append(f"   comment: {s.comment}")
+            question = s.question or f"Question {i}"
 
-    if payload.additional_comments:
+            parts.append(
+                f" - {question} "
+                f"(type={s.type}, max_points={s.max_points}, awarded_points={s.awarded_points})"
+            )
+
+            if s.comments:
+                parts.append(f"   comments: {s.comments}")
+
+    # Additional overall comment
+    if payload.additional_comment:
         parts.append("Additional comments:")
-        parts.append(payload.additional_comments)
+        parts.append(payload.additional_comment)
 
-    # join with double newlines to make the input readable to LLM
+    # Join with double newlines to keep things readable for the LLM
     return "\n\n".join(parts)
 
 
