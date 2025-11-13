@@ -9,8 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project
 COPY . .
 
-#copy the .env.example to .env. it is a command inside the app direcotry
-RUN cp .env.example .env
+
 
 EXPOSE 8000
 

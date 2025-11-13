@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Create .env from example
+        run: cp .env.example .env
 
       - name: Stop and remove existing containers
         run: |
