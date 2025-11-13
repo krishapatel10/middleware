@@ -15,17 +15,17 @@ jobs:
       - name: Stop and remove existing containers
         run: |
           cd ${{ github.workspace }}
-          docker-compose down || true
+          docker compose down || true
 
       - name: Build and start services
         run: |
           cd ${{ github.workspace }}
-          docker-compose up -d --build
+          docker compose up -d --build
 
       - name: Verify services are running
         run: |
           cd ${{ github.workspace }}
-          docker-compose ps
+          docker compose ps
           sleep 5
-          docker-compose logs app --tail=50
+          docker compose logs app --tail=50
 
