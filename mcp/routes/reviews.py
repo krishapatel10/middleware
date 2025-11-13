@@ -26,7 +26,7 @@ async def create_review(
     if not payload.response_id_of_expertiza:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Missing response_id_of_expertiza")
 
-    if not (payload.overall_comments or payload.scores or payload.additional_comments):
+    if not (payload.additional_comment or payload.scores):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Review content cannot be empty")
 
     # Convert structured payload into single LLM-facing text

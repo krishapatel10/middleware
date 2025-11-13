@@ -7,15 +7,17 @@ RubricKey = Optional[Union[int, float, str]]
 
 class ScoreItem(BaseModel):
     question: str = Field(..., description="Question identifier or label")
-    answer: Union[int, float, str] = Field(..., description="Numeric or textual score answer")
-    comment: Optional[str] = Field(None, description="Optional comment for the question")
+    type: str = Field(..., description="Type of the question, e.g., 'Criterion'")
+    max_points: Union[int, float, str] = Field(..., description="Numeric or textual score answer")
+    awarded_points: Union[int, float, str] = Field(..., description="Points awarded for the question")
+    comments: Optional[str] = Field(None, description="Optional comment for the question")
 
 class ReviewPayload(BaseModel):
-    assignment: Optional[str] = Field(None, description="Name of the assignment")
+    assignment_name: Optional[str] = Field(None, description="Name of the assignment")
+    course_name: Optional[str] = Field(None, description="Name of the course")
     response_id_of_expertiza: Union[int, str] = Field(..., description="ID of the expertiza response being reviewed")
-    overall_comments: Optional[str] = Field(None, description="Overall comments about the review")
     scores: Optional[List[ScoreItem]] = Field(None, description="List of scores with questions and comments")
-    additional_comments: Optional[str] = Field(None, description="Additional comments about the review")
+    additional_comment: Optional[str] = Field(None, description="Additional comments about the review")
 
 class FinalizeReview(BaseModel):
     finalized_feedback: Optional[str]
