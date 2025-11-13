@@ -10,6 +10,7 @@ class ScoreItem(BaseModel):
     type: str = Field(..., description="Type of the question, e.g., 'Criterion'")
     max_points: Union[int, float, str] = Field(..., description="Numeric or textual score answer")
     awarded_points: Union[int, float, str, None] = Field(..., description="Points awarded for the question") #it can be null to indicate no score given
+    round:Optional[int]=Field(None,description="Round number of the review")
     comments: Optional[str] = Field(None, description="Optional comment for the question")
 
 class ReviewPayload(BaseModel):
