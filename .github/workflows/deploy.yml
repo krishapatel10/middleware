@@ -12,26 +12,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Sync repo (optional if checkout is enough)
+      - name: Stop and remove existing containers
         run: |
-          cd /home/upaul/mcp-server
-          git fetch --all
-          git checkout ${{ github.ref_name }}
-          git pull
+          cd ${{ github.workspace }}
+          docker-compose down || true
 
-      - name: Build Docker image
+      - name: Build and start services
         run: |
-          cd /home/upaul/mcp-server
-          docker build -t mcp-fastapi .
+          cd ${{ github.workspace }}
+          docker-compose up -d --build
 
-      - name: Restart container
+      - name: Verify services are running
         run: |
-          cd /home/upaul/mcp-server
-          docker stop mcp-api || true
-          docker rm mcp-api || true
-          docker run -d --name mcp-api \
-            --env-file .env \
-            -p 8000:8000 \
-            mcp-fastapi
-            
-            
+          cd ${{ github.workspace }}
+          docker-compose ps
+          sleep 5
+          docker-compose logs app --tail=50
+
