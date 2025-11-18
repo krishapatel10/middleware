@@ -27,8 +27,8 @@ class ReviewPayload(BaseModel):
 
 
 class FinalizeReview(BaseModel):
-    finalized_feedback: Optional[str]
-    finalized_score: Optional[float]
+    finalized_feedback: Optional[str] = None
+    finalized_score: Optional[Union[str, dict, float]] = None  # Can accept JSON (str/dict) or float
 
 class Reasoning(BaseModel):
     Praise: Optional[str] = None
@@ -90,7 +90,7 @@ class ReviewResponse(BaseModel):
     llm_details_reasoning: Optional[str] = None
     llm_generated_output: Optional[Union[str, dict, ReviewLLMOutput]] = None  
     finalized_feedback: Optional[str] = None
-    finalized_score: Optional[float] = None
+    finalized_score: Optional[Union[str, dict, float]] = None  # Can accept JSON (str/dict) or float for backward compatibility
     status: str
 
     class Config:

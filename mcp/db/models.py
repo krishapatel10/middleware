@@ -26,7 +26,7 @@ class Review(Base):
     llm_generated_output = Column(Text, nullable=True) 
 
     finalized_feedback = Column(Text, nullable=True)
-    finalized_score = Column(Float, nullable=True)
+    finalized_score = Column(Text, nullable=True)  # Changed to Text to store JSON evaluation object
 
     status = Column(Enum(ReviewStatus, name="review_status"), nullable=False, default=ReviewStatus.pending)
 
