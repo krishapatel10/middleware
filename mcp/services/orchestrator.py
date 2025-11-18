@@ -25,8 +25,8 @@ async def generate_llm_review(review_text: str, temperature: float = 0.0, max_at
 async def process_review_and_update(review_id: int, review_text: str):
     """
     Worker coroutine: calls LLM via generate_llm_review, normalizes output,
-    and writes only llm_generated_feedback, llm_generated_score, llm_details_reasoning, status.
-    (No writes to llm_generated_output.)
+    and writes llm_generated_feedback, llm_generated_score (evaluation JSON), 
+    llm_details_reasoning, llm_generated_output (full output), and status.
     """
     try:
         llm_out = await generate_llm_review(review_text)  
@@ -64,7 +64,13 @@ async def process_review_and_update(review_id: int, review_text: str):
 
     # Extract fields
     feedback = llm_dict.get("feedback")
-    score = llm_dict.get("score")
+    
+    # Extract evaluation object (all scores) and JSON-serialize it
+    evaluation_obj = llm_dict.get("evaluation")
+    try:
+        evaluation_json = json.dumps(evaluation_obj) if evaluation_obj is not None else None
+    except (TypeError, ValueError):
+        evaluation_json = json.dumps(str(evaluation_obj))
 
     # Extract reasoning/details and JSON-serialize for storage text column
     details_obj = llm_dict.get("reasoning") or llm_dict.get("reasoning_summary") or None
@@ -73,12 +79,19 @@ async def process_review_and_update(review_id: int, review_text: str):
     except (TypeError, ValueError):
         details_json = json.dumps(str(details_obj))
 
+    # Serialize the full LLM output to JSON
+    try:
+        full_output_json = json.dumps(llm_dict) if llm_dict else None
+    except (TypeError, ValueError):
+        full_output_json = json.dumps(str(llm_dict))
+
     update_sql = text(
         """
         UPDATE reviews_table
            SET llm_generated_feedback = :feedback,
-               llm_generated_score = :score,
+               llm_generated_score = :evaluation,
                llm_details_reasoning = :details,
+               llm_generated_output = :full_output,
                status = :status,
                updated_at = CURRENT_TIMESTAMP
          WHERE id = :id
@@ -91,8 +104,9 @@ async def process_review_and_update(review_id: int, review_text: str):
                 update_sql,
                 {
                     "feedback": feedback,
-                    "score": score,
+                    "evaluation": evaluation_json,
                     "details": details_json,
+                    "full_output": full_output_json,
                     "status": "processed",
                     "id": review_id,
                 },

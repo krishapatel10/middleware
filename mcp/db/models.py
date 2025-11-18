@@ -16,13 +16,14 @@ class Review(Base):
     __tablename__ = "reviews_table"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    response_id_of_expertiza = Column(Integer, nullable=False, index=True, unique=True)  # 👈 enforce uniqueness
+    response_id_of_expertiza = Column(Integer, nullable=False, index=True, unique=True) 
 
     review = Column(Text, nullable=False)
 
     llm_generated_feedback = Column(Text, nullable=True)
-    llm_generated_score = Column(Float, nullable=True)
+    llm_generated_score = Column(Text, nullable=True)  
     llm_details_reasoning = Column(Text, nullable=True)
+    llm_generated_output = Column(Text, nullable=True) 
 
     finalized_feedback = Column(Text, nullable=True)
     finalized_score = Column(Float, nullable=True)
@@ -33,7 +34,7 @@ class Review(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("response_id_of_expertiza", name="uq_response_id_of_expertiza"),  # 👈 double safety
+        UniqueConstraint("response_id_of_expertiza", name="uq_response_id_of_expertiza"), 
     )
 
 class FailedJob(Base):

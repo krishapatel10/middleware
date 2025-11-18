@@ -86,9 +86,9 @@ class ReviewLLMOutput(BaseModel):
 class ReviewResponse(BaseModel):
     id: int
     llm_generated_feedback: Optional[str] = None
-    llm_generated_score: Optional[float] = None
+    llm_generated_score: Optional[Union[str, dict]] = None  
     llm_details_reasoning: Optional[str] = None
-    llm_generated_output: Optional[ReviewLLMOutput] = None
+    llm_generated_output: Optional[Union[str, dict, ReviewLLMOutput]] = None  
     finalized_feedback: Optional[str] = None
     finalized_score: Optional[float] = None
     status: str
