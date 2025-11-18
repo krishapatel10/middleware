@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from mcp.schemas import ReviewPayload, ReviewResponse, FinalizeReview
 from mcp.db.session import AsyncSessionLocal
-from mcp.db.crud import get_review_by_response_id, insert_review_received, get_review_by_id, finalize_review_by_id
+from mcp.db.crud import get_review_by_response_id, insert_review_received, get_review_by_id, finalize_review_by_id, finalize_review_by_response_id
 from mcp.services.utils import schedule_process_review  
 from mcp.core.auth import verify_jwt  
 from mcp.services.utils import build_review_text
@@ -52,9 +52,13 @@ async def get_review(expertiza_resonse_id: int, user=Depends(verify_jwt), db: As
     return ReviewResponse(**rec)
 
 
-@router.post("/{review_id}/accept", response_model=ReviewResponse)
-async def accept_review(review_id: int, payload: FinalizeReview, user=Depends(verify_jwt), db: AsyncSession = Depends(get_db)):
-    updated = await finalize_review_by_id(db, review_id, payload.finalized_score, payload.finalized_feedback)
+@router.post("/{response_id_of_expertiza}/accept", response_model=ReviewResponse)
+async def accept_review(response_id_of_expertiza: int, payload: FinalizeReview, user=Depends(verify_jwt), db: AsyncSession = Depends(get_db)):
+    """
+    Finalize a review by response_id_of_expertiza.
+    Accepts finalized_score as JSON (evaluation object), JSON string, or float.
+    """
+    updated = await finalize_review_by_response_id(db, response_id_of_expertiza, payload.finalized_score, payload.finalized_feedback)
     if not updated:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
     return ReviewResponse(**updated)
