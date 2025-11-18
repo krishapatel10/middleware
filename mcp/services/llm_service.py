@@ -71,6 +71,13 @@ class LLMService:
             try:
                 prompt = build_review_prompt(review_text)
                 raw = await self.client.evaluate(prompt, temperature=temperature)
+                
+                # Check if raw is None or empty
+                if not raw or raw.strip() == "":
+                    logger.warning("Attempt %d/%d: LLM returned empty response", attempt, max_attempts)
+                    last_raw = raw or "Empty response from LLM"
+                    raise ValueError("LLM returned empty response")
+                
                 last_raw = raw
 
                 # Extract JSON from markdown code blocks if present
