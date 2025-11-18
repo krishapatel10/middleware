@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from mcp.schemas import ReviewPayload, ReviewResponse, FinalizeReview
 from mcp.db.session import AsyncSessionLocal
-from mcp.db.crud import insert_review_received, get_review_by_id, finalize_review_by_id
+from mcp.db.crud import get_review_by_response_id, insert_review_received, get_review_by_id, finalize_review_by_id
 from mcp.services.utils import schedule_process_review  
 from mcp.core.auth import verify_jwt  
 from mcp.services.utils import build_review_text
@@ -44,9 +44,9 @@ async def create_review(
 
 
 
-@router.get("/{review_id}", response_model=ReviewResponse)
-async def get_review(review_id: int, user=Depends(verify_jwt), db: AsyncSession = Depends(get_db)):
-    rec = await get_review_by_id(db, review_id)
+@router.get("/{expertiza_resonse_id}", response_model=ReviewResponse)
+async def get_review(expertiza_resonse_id: int, user=Depends(verify_jwt), db: AsyncSession = Depends(get_db)):
+    rec = await get_review_by_response_id(db, expertiza_resonse_id)
     if not rec:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Review not found")
     return ReviewResponse(**rec)
