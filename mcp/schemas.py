@@ -1,5 +1,5 @@
-# app/schemas.py
-from pydantic import BaseModel, Field, conint
+import json
+from pydantic import BaseModel, Field, conint, field_validator
 from typing import Optional, Union, List
 
 # Accept ints, floats, strings, or None for scores
@@ -19,6 +19,11 @@ class ReviewPayload(BaseModel):
     scores: Optional[List[ScoreItem]] = Field(None, description="List of scores with questions and comments")
     additional_comment: Optional[str] = Field(None, description="Additional comments about the review")
     round:Optional[int]=Field(None,description="Round number of the review")
+    previous_round_review: Optional[Union[str, dict, list]] = Field(
+        None,
+        alias="previousRoundReview",
+        description="Previous round review (string or JSON object/array)"
+    )
 
 
 class FinalizeReview(BaseModel):
