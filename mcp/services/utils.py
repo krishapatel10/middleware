@@ -62,7 +62,9 @@ def _normalize(value: any) -> Any:
     if isinstance(value, str):
         s = value.strip()
         up = s.upper()
-        if up in {"N/A", "NA", "NONE", "NULL", ""}:
+        # Preserve "N/A" as string for "Acted On" scores (don't convert to None)
+        # Only convert empty strings and explicit null-like values to None
+        if up in {"NONE", "NULL", ""}:
             return None
         # numeric-like string -> number
         if s.replace(".", "", 1).lstrip("-").isdigit():

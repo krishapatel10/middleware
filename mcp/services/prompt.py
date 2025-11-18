@@ -84,19 +84,19 @@ You MUST return JSON with this exact top-level structure and keys:
     "Comprehensiveness": "string"
   },
   "evaluation": {
-    "Praise": {"score": int, "justification": "string"},
-    "Problems & Solutions": {"score": int, "justification": "string"},
-    "Tone": {"score": int, "justification": "string"},
-    "Localization": {"score": int, "justification": "string"},
-    "Helpfulness": {"score": int, "justification": "string"},
-    "Explanation": {"score": int, "justification": "string"},
-    "Acted On": {"score": "int or \"N/A\"", "justification": "string"},
-    "Relevance": {"score": int, "justification": "string"},
-    "Consistency": {"score": int, "justification": "string"},
-    "Actionability": {"score": int, "justification": "string"},
-    "Factuality": {"score": int, "justification": "string"},
-    "Accessibility": {"score": int, "justification": "string"},
-    "Comprehensiveness": {"score": int, "justification": "string"}
+    "Praise": {"score": <integer 1-10>, "justification": "string"},
+    "Problems & Solutions": {"score": <integer 1-10>, "justification": "string"},
+    "Tone": {"score": <integer 1-10>, "justification": "string"},
+    "Localization": {"score": <integer 1-10>, "justification": "string"},
+    "Helpfulness": {"score": <integer 1-10>, "justification": "string"},
+    "Explanation": {"score": <integer 1-10>, "justification": "string"},
+    "Acted On": {"score": <integer 1-10, or string "N/A" if round is 1>, "justification": "string"},
+    "Relevance": {"score": <integer 1-10>, "justification": "string"},
+    "Consistency": {"score": <integer 1-10>, "justification": "string"},
+    "Actionability": {"score": <integer 1-10>, "justification": "string"},
+    "Factuality": {"score": <integer 1-10>, "justification": "string"},
+    "Accessibility": {"score": <integer 1-10>, "justification": "string"},
+    "Comprehensiveness": {"score": <integer 1-10>, "justification": "string"}
   },
   "feedback": "string"
 }
@@ -104,8 +104,10 @@ You MUST return JSON with this exact top-level structure and keys:
 Notes:
 - All scores (except "Acted On" in round 1) must be integers from 1 to 10.
 - For "Acted On":
-  - If round == 1: set score to the string "N/A" and explain why in the reasoning and justification.
+  - If round == 1: set score to the string "N/A" (exactly as written, with quotes in JSON) and explain why in the reasoning and justification.
   - If round > 1: set score to an integer from 1 to 10 based on whether the current review addressed issues raised in "previous_round_review".
+
+CRITICAL: Return ONLY valid JSON. Do NOT wrap in markdown code blocks (no ```json or ```). Do NOT include any text before or after the JSON. Return the raw JSON object only.
 
 ---
 

@@ -73,11 +73,23 @@ class LLMService:
                 raw = await self.client.evaluate(prompt, temperature=temperature)
                 last_raw = raw
 
+                # Extract JSON from markdown code blocks if present
+                cleaned = raw.strip()
+                # Remove markdown code fences (```json ... ``` or ``` ... ```)
+                if cleaned.startswith("```"):
+                    # Find the first newline after ```
+                    first_newline = cleaned.find("\n")
+                    if first_newline != -1:
+                        cleaned = cleaned[first_newline:].strip()
+                    # Remove trailing ```
+                    if cleaned.endswith("```"):
+                        cleaned = cleaned[:-3].strip()
+                
                 try:
-                    parsed = json.loads(raw)
+                    parsed = json.loads(cleaned)
                 except json.JSONDecodeError as jde:
-                    logger.info("JSON decode failed on parsed string: %s", jde)
-                    logger.debug("JSON candidate (truncated): %s", parsed[:1000])
+                    logger.info("JSON decode failed on cleaned string: %s", jde)
+                    logger.debug("JSON candidate (truncated): %s", cleaned[:1000])
                     raise
 
                 if parsed is None:
