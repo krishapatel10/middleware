@@ -1,5 +1,5 @@
-# app/schemas.py
-from pydantic import BaseModel, Field, conint
+import json
+from pydantic import BaseModel, Field, conint, field_validator
 from typing import Optional, Union, List
 
 # Accept ints, floats, strings, or None for scores
@@ -19,11 +19,16 @@ class ReviewPayload(BaseModel):
     scores: Optional[List[ScoreItem]] = Field(None, description="List of scores with questions and comments")
     additional_comment: Optional[str] = Field(None, description="Additional comments about the review")
     round:Optional[int]=Field(None,description="Round number of the review")
+    previous_round_review: Optional[Union[str, dict, list]] = Field(
+        None,
+        alias="previousRoundReview",
+        description="Previous round review (string or JSON object/array)"
+    )
 
 
 class FinalizeReview(BaseModel):
-    finalized_feedback: Optional[str]
-    finalized_score: Optional[float]
+    finalized_feedback: Optional[str] = None
+    finalized_score: Optional[Union[str, dict, float]] = None  # Can accept JSON (str/dict) or float
 
 class Reasoning(BaseModel):
     Praise: Optional[str] = None
@@ -81,11 +86,11 @@ class ReviewLLMOutput(BaseModel):
 class ReviewResponse(BaseModel):
     id: int
     llm_generated_feedback: Optional[str] = None
-    llm_generated_score: Optional[float] = None
+    llm_generated_score: Optional[Union[str, dict]] = None  
     llm_details_reasoning: Optional[str] = None
-    llm_generated_output: Optional[ReviewLLMOutput] = None
+    llm_generated_output: Optional[Union[str, dict, ReviewLLMOutput]] = None  
     finalized_feedback: Optional[str] = None
-    finalized_score: Optional[float] = None
+    finalized_score: Optional[Union[str, dict, float]] = None  # Can accept JSON (str/dict) or float for backward compatibility
     status: str
 
     class Config:
