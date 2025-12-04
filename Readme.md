@@ -4,67 +4,37 @@ Lightweight middleware built with **FastAPI** that connects a large language mod
 
 ---
 
+##  Documentation (GitHub Wiki)
+
+Full documentation, including architecture, setup guides, API reference, and data models, is available here:
+
+ **https://github.com/krishapatel10/middleware/wiki**
+
+Key pages:
+
+- [01 — Introduction & Overview](../../wiki/01-Introduction)
+- [02 — Getting Started](../../wiki/02-Getting-Started)
+- [03 — Architecture](../../wiki/03-Architecture)
+- [04 — API: Reviews](../../wiki/04-API-Reviews)
+- [05 — API: LLM](../../wiki/05-API-LLM)
+- [API Authentication](../../wiki/04-API-Auth)
+- [API Error Handling](../../wiki/04-API-Errors)
+- [Data Model](../../wiki/05-Data-Model)
+
+---
+
 ## Tech Stack
 
-* **FastAPI** – modern async web framework
-* **PostgreSQL** – relational database
-* **SQLAlchemy + asyncpg** – ORM and async DB driver
-* **Uvicorn** – ASGI server
+* **FastAPI** – modern async web framework  
+* **PostgreSQL** – relational database  
+* **SQLAlchemy + asyncpg** – ORM and async DB driver  
+* **Uvicorn** – ASGI server  
 
 ---
 
-## Setup
+**Notes**
 
-### 1. Clone and install
+psql is not a pip package — install PostgreSQL locally if running without Docker.
+Always use a strong JWT_SECRET in production.
 
-```bash
-git clone https://github.ncsu.edu/upaul/mcp-server.git
-cd mcp-server
-```
-
-### 2. Environment variables
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and fill in the values.
-
-### 3. Run with Docker
-
-```bash
-docker compose up --build
-```
-
-The server will start on port **8000**.
-
-## API Endpoints
-
-Reviews
-```
-POST /reviews
-Create a review (body: ReviewPayload). Background job will schedule LLM processing.
-Response: ReviewResponse (201)
-GET /reviews/{review_id}
-Retrieve a review by ID. Response: ReviewResponse.
-POST /reviews/{review_id}/accept
-Finalize a review (body: FinalizeReview — finalized score & feedback). Response: ReviewResponse.
-POST /reviews/{review_id}/trigger
-Manually schedule/reprocess LLM job for an existing review. Returns { message, status, review_id } (202).
-```
-
-LLM service (internal/admin)
-
-```
-POST /llmreview
-Calls LLMService to evaluate & parse review_text. Body: ReviewRequest (fields: review_text, optional temperature, optional max_attempts). Returns validated JSON or 422/502 on errors.
-```
-
----
-
-
-## Notes
-
-* `psql` (the PostgreSQL CLI) is not a pip package — ensure PostgreSQL is installed on your system.
-* Replace `your_secret_key` with a secure key in production.
 
